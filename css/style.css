@@ -1,0 +1,227 @@
+:root {
+    --bg-body: #1e1e1e;
+    --bg-card: #252526;
+    --bg-input: #3c3c3c;
+
+    --text-main: #d4d4d4;
+    --text-muted: #858585;
+    --text-white: #ffffff;
+
+    --accent-blue: #569cd6;
+    --accent-green: #6a9955;
+    --accent-orange: #ce9178;
+    --accent-purple: #c586c0;
+
+    --ui-primary: #007acc;
+    --ui-success: #4caf50;
+    --ui-error: #f44336;
+
+    --border-color: #333333;
+}
+
+/* RESET */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* BODY GLOBAL */
+body {
+    background-color: var(--bg-body);
+    color: var(--text-main);
+    font-family: 'Consolas', 'Courier New', monospace;
+
+    /* Centralização do bloco 💠 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url('https://www.transparenttextures.com/patterns/diagmonds-light.png');
+    opacity: 0.05;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* BLOCO CENTRALIZADO */
+.container,
+.quiz-container,
+.result-container {
+    background-color: var(--bg-card);
+    width: 90%;
+    max-width: 600px;
+
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 2rem;
+
+    position: relative;
+    overflow: hidden;
+
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* Especial para o quiz */
+.quiz-container {
+    max-width: 750px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* TITULOS */
+h1, h2, h3 {
+    color: var(--text-white);
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    text-align: center;
+}
+
+h2 { font-size: 1.5rem; }
+
+/* TEXTOS COLORIDOS */
+.text-blue { color: var(--accent-blue); }
+.text-orange { color: var(--accent-orange); }
+.text-green { color: var(--accent-green); }
+.text-purple { color: var(--accent-purple); }
+.tag { color: #808080; }
+
+/* BOTÕES */
+.btn {
+    display: inline-block;
+    width: 100%;
+    padding: 12px 24px;
+
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: center;
+
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    transition: 0.2s ease-in-out;
+}
+
+.btn-primary {
+    background-color: var(--ui-success);
+    color: var(--text-white);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: transparent;
+    border: 2px solid var(--accent-blue);
+    color: var(--accent-blue);
+    margin-top: 10px;
+}
+
+.btn-secondary:hover {
+    background-color: rgba(86, 156, 214, 0.1);
+}
+
+.btn-next {
+    width: auto;
+    padding: 10px 30px;
+    background-color: var(--ui-primary);
+    color: var(--text-white);
+}
+
+.btn-next:hover {
+    background-color: #005f9e;
+}
+
+/* BLOCO DE CÓDIGO */
+.code-block {
+    background-color: #101010;
+    color: #9cdcfe;
+
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    overflow-x: auto;
+
+    border-radius: 6px;
+    border-left: 4px solid var(--accent-purple);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+/* QUIZ OPTIONS */
+.options-grid {
+    display: grid;
+    gap: 10px;
+}
+
+.option-btn {
+    background-color: var(--bg-input);
+    color: var(--text-main);
+
+    padding: 15px;
+    text-align: left;
+
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+
+    transition: 0.2s ease;
+}
+
+.option-btn:hover:not(:disabled) {
+    background-color: #505050;
+    border-left: 4px solid var(--accent-blue);
+}
+
+.option-btn.correct {
+    background-color: rgba(76, 175, 80, 0.2);
+    border-color: var(--ui-success);
+    color: var(--ui-success);
+}
+
+.option-btn.wrong {
+    background-color: rgba(244, 67, 54, 0.2);
+    border-color: var(--ui-error);
+    color: var(--ui-error);
+}
+
+/* TYPING CURSOR */
+@keyframes blink {
+    0%, 100% { border-color: transparent; }
+    50% { border-color: var(--text-white); }
+}
+
+.cursor {
+    height: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    border-right: 2px solid var(--text-white);
+    animation: blink 0.75s step-end infinite;
+}
+
+/* RESPONSIVO */
+@media (max-width: 600px) {
+    h1 { font-size: 2rem; }
+    .container { padding: 1.5rem; }
+    .code-block { font-size: 0.8rem; }
+}

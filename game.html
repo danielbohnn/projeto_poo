@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeQuiz - Jogando</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <div class="quiz-container">
+        <div class="quiz-header" style="background: #333; padding: 1rem; display: flex; justify-content: space-between;">
+            <div class="hud-item">Questão: <span class="text-blue">1/5</span></div>
+            <div class="hud-item">Score: <span class="text-blue">0</span></div>
+        </div>
+
+        <div class="question-area" style="padding: 2rem;">
+            <h2>O que será impresso no console?</h2>
+
+            <div class="code-block">
+let x = 10;
+if (true) {
+  let x = 20;
+  console.log(x);
+}
+console.log(x);</div>
+
+            <div class="options-grid">
+                <button class="option-btn">20 e 10</button>
+                <button class="option-btn">20 e 20</button>
+                <button class="option-btn">10 e 10</button>
+                <button class="option-btn">Erro de Sintaxe</button>
+            </div>
+        </div>
+
+        <div class="controls" style="padding: 1rem 2rem; display: flex; justify-content: flex-end; background: #252526;">
+            <a href="result.html" class="btn btn-next" style="text-decoration: none;">Próxima >></a>
+        </div>
+    </div>
+
+</body>
+</html>
