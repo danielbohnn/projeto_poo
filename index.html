@@ -15,14 +15,135 @@
             var status = "Pronto para o desafio?";<span class="cursor">&nbsp;</span>
         </p>
 
-        <div class="btn-group">
-            <a href="game.html" class="btn btn-primary" style="text-decoration: none;">Iniciar Compilação</a>
+        <!-- Formulário de Login -->
+        <div id="loginForm" style="display: block;">
+            <h2 style="text-align: center; margin-bottom: 1rem; font-size: 1.2rem;">Login</h2>
+            <div id="loginError" style="color: var(--ui-error); margin-bottom: 1rem; text-align: center; display: none;"></div>
+            <input type="text" id="loginUsuario" placeholder="Usuário" style="width: 100%; padding: 12px; margin-bottom: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-family: inherit;">
+            <input type="password" id="loginSenha" placeholder="Senha" style="width: 100%; padding: 12px; margin-bottom: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-family: inherit;">
+            <button onclick="fazerLogin()" class="btn btn-primary" style="margin-bottom: 10px;">Entrar</button>
+            <button onclick="mostrarCadastro()" class="btn btn-secondary">Não tem conta? Cadastre-se</button>
+        </div>
+
+        <!-- Formulário de Cadastro -->
+        <div id="cadastroForm" style="display: none;">
+            <h2 style="text-align: center; margin-bottom: 1rem; font-size: 1.2rem;">Cadastro</h2>
+            <div id="cadastroError" style="color: var(--ui-error); margin-bottom: 1rem; text-align: center; display: none;"></div>
+            <div id="cadastroSuccess" style="color: var(--ui-success); margin-bottom: 1rem; text-align: center; display: none;"></div>
+            <input type="text" id="cadastroUsuario" placeholder="Usuário" style="width: 100%; padding: 12px; margin-bottom: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-family: inherit;">
+            <input type="password" id="cadastroSenha" placeholder="Senha" style="width: 100%; padding: 12px; margin-bottom: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-family: inherit;">
+            <input type="password" id="cadastroConfirmaSenha" placeholder="Confirmar Senha" style="width: 100%; padding: 12px; margin-bottom: 10px; background: var(--bg-input); border: 1px solid var(--border-color); color: var(--text-main); border-radius: 4px; font-family: inherit;">
+            <button onclick="fazerCadastro()" class="btn btn-primary" style="margin-bottom: 10px;">Cadastrar</button>
+            <button onclick="mostrarLogin()" class="btn btn-secondary">Já tem conta? Faça login</button>
         </div>
 
         <footer style="margin-top: 2rem; text-align: center; color: #606060; font-size: 0.8rem;">
             <p>console.log("Desenvolvido por Daniel Bohn, Guilherme Mattielo, Luana Pierozan, Lucas Grasel, Arthur Belmonte, Eduarda Campos");</p>
         </footer>
     </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        function mostrarCadastro() {
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('cadastroForm').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        function mostrarLogin() {
+            document.getElementById('cadastroForm').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('cadastroError').style.display = 'none';
+            document.getElementById('cadastroSuccess').style.display = 'none';
+        }
+
+        async function fazerCadastro() {
+            const usuario = document.getElementById('cadastroUsuario').value.trim();
+            const senha = document.getElementById('cadastroSenha').value.trim();
+            const confirmaSenha = document.getElementById('cadastroConfirmaSenha').value.trim();
+            const errorDiv = document.getElementById('cadastroError');
+            const successDiv = document.getElementById('cadastroSuccess');
+
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            if (!usuario || !senha || !confirmaSenha) {
+                errorDiv.textContent = 'Preencha todos os campos!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/cadastrar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha, confirma_senha: confirmaSenha })
+                });
+
+                const data = await response.json();
+
+                if (data.sucesso) {
+                    successDiv.textContent = data.mensagem;
+                    successDiv.style.display = 'block';
+                    setTimeout(() => {
+                        mostrarLogin();
+                        document.getElementById('loginUsuario').value = usuario;
+                    }, 1500);
+                } else {
+                    errorDiv.textContent = data.mensagem;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Erro ao conectar com o servidor. Certifique-se de que o servidor está rodando!';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        async function fazerLogin() {
+            const usuario = document.getElementById('loginUsuario').value.trim();
+            const senha = document.getElementById('loginSenha').value.trim();
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.style.display = 'none';
+
+            if (!usuario || !senha) {
+                errorDiv.textContent = 'Preencha usuário e senha!';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario, senha })
+                });
+
+                const data = await response.json();
+
+                if (data.sucesso) {
+                    localStorage.setItem('user_id', data.user_id);
+                    localStorage.setItem('usuario', data.usuario);
+                    window.location.href = 'game.html';
+                } else {
+                    errorDiv.textContent = data.mensagem;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Erro ao conectar com o servidor. Certifique-se de que o servidor está rodando!';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Permitir Enter nos campos
+        document.getElementById('loginSenha').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fazerLogin();
+        });
+        document.getElementById('cadastroConfirmaSenha').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fazerCadastro();
+        });
+    </script>
 
 </body>
 </html>

@@ -12,31 +12,228 @@
 
     <div class="quiz-container">
         <div class="quiz-header"
-            style="background: #333; padding: 1rem; display: flex; justify-content: space-between;">
-            <div class="hud-item">Questão: <span class="text-blue">1/10</span></div>
-            <div class="hud-item">Score: <span class="text-blue">0</span></div>
+            style="background: #333; padding: 1rem; display: flex; justify-content: space-between; align-items: center;">
+            <div class="hud-item">Questão: <span class="text-blue" id="questaoAtual">1</span>/<span id="totalQuestoes">10</span></div>
+            <div class="hud-item">Score: <span class="text-blue" id="score">0</span></div>
+            <div class="hud-item" style="font-size: 0.9rem; color: var(--text-muted);">
+                <span id="usuarioNome"></span>
+            </div>
         </div>
 
         <div class="question-area" style="padding: 2rem;">
-            <h2>Pergunta</h2>
+            <h2 id="perguntaTitulo">Carregando questão...</h2>
 
-            <div class="code-block">
-                Conteúdo da atividade
+            <div class="code-block" id="perguntaTexto">
+                Aguarde...
             </div>
 
-            <div class="options-grid">
-                <button class="option-btn">opção 1</button>
-                <button class="option-btn">opção 2</button>
-                <button class="option-btn">opção 3</button>
-                <button class="option-btn">opção 4</button>
+            <div class="options-grid" id="opcoesContainer">
+                <!-- Opções serão inseridas aqui -->
             </div>
+
+            <div id="feedback" style="margin-top: 1rem; padding: 1rem; border-radius: 4px; display: none;"></div>
         </div>
 
         <div class="controls"
-            style="padding: 1rem 2rem; display: flex; justify-content: flex-end; background: #252526;">
-            <a href="result.html" class="btn btn-next" style="text-decoration: none;">Próxima >></a>
+            style="padding: 1rem 2rem; display: flex; justify-content: space-between; background: #252526;">
+            <button onclick="voltarInicio()" class="btn btn-secondary" style="width: auto; padding: 10px 20px;">Sair</button>
+            <button id="btnProxima" onclick="proximaQuestao()" class="btn btn-next" style="width: auto; padding: 10px 30px; display: none;">Próxima >></button>
+            <button id="btnFinalizar" onclick="finalizarQuiz()" class="btn btn-primary" style="width: auto; padding: 10px 30px; display: none;">Finalizar Quiz</button>
         </div>
     </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        
+        let quiz = [];
+        let questaoAtual = 0;
+        let respostas = [];
+        let score = 0;
+        let user_id = null;
+
+        // Verificar se está logado
+        window.addEventListener('DOMContentLoaded', () => {
+            user_id = localStorage.getItem('user_id');
+            const usuario = localStorage.getItem('usuario');
+            
+            if (!user_id) {
+                alert('Você precisa fazer login primeiro!');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            if (usuario) {
+                document.getElementById('usuarioNome').textContent = usuario;
+            }
+
+            iniciarQuiz();
+        });
+
+        async function iniciarQuiz() {
+            try {
+                const response = await fetch(`${API_URL}/gerar-quiz`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nivel: null }) // null = aleatório
+                });
+
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    quiz = data.quiz;
+                    // Adicionar IDs das questões de volta (precisamos para verificar)
+                    // Vamos buscar as questões completas novamente para ter os IDs
+                    await carregarQuestoesCompletas();
+                    mostrarQuestao(0);
+                } else {
+                    alert('Erro ao carregar quiz!');
+                }
+            } catch (error) {
+                alert('Erro ao conectar com o servidor. Certifique-se de que o servidor está rodando!');
+                console.error(error);
+            }
+        }
+
+        async function carregarQuestoesCompletas() {
+            // As questões já vêm com IDs da API
+            // Não precisamos fazer nada adicional
+        }
+
+        function mostrarQuestao(index) {
+            if (index >= quiz.length) {
+                finalizarQuiz();
+                return;
+            }
+
+            questaoAtual = index;
+            const questao = quiz[index];
+
+            document.getElementById('questaoAtual').textContent = index + 1;
+            document.getElementById('totalQuestoes').textContent = quiz.length;
+            document.getElementById('perguntaTitulo').textContent = `Questão ${index + 1} - Nível: ${questao.nivel.toUpperCase()}`;
+            document.getElementById('perguntaTexto').textContent = questao.pergunta;
+
+            // Limpar opções anteriores
+            const container = document.getElementById('opcoesContainer');
+            container.innerHTML = '';
+
+            // Criar botões de opções
+            const opcoes = [
+                { letra: 'A', texto: questao.alternativaA },
+                { letra: 'B', texto: questao.alternativaB },
+                { letra: 'C', texto: questao.alternativaC },
+                { letra: 'D', texto: questao.alternativaD }
+            ];
+
+            opcoes.forEach(opcao => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = `${opcao.letra}) ${opcao.texto}`;
+                btn.onclick = () => selecionarResposta(opcao.letra, questao.id);
+                container.appendChild(btn);
+            });
+
+            // Esconder botões
+            document.getElementById('btnProxima').style.display = 'none';
+            document.getElementById('btnFinalizar').style.display = 'none';
+            document.getElementById('feedback').style.display = 'none';
+        }
+
+        async function selecionarResposta(resposta, questaoId) {
+            // Desabilitar todos os botões
+            const botoes = document.querySelectorAll('.option-btn');
+            botoes.forEach(btn => btn.disabled = true);
+
+            // Verificar resposta
+            try {
+                const response = await fetch(`${API_URL}/verificar-resposta`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ questao_id: questaoId, resposta: resposta })
+                });
+
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    // Salvar resposta
+                    respostas.push({ questao_id: questaoId, resposta: resposta });
+
+                    // Mostrar feedback
+                    const feedbackDiv = document.getElementById('feedback');
+                    if (data.acertou) {
+                        feedbackDiv.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
+                        feedbackDiv.style.border = '1px solid var(--ui-success)';
+                        feedbackDiv.style.color = 'var(--ui-success)';
+                        feedbackDiv.textContent = '✓ Correto!';
+                        score++;
+                        document.getElementById('score').textContent = score;
+                    } else {
+                        feedbackDiv.style.backgroundColor = 'rgba(244, 67, 54, 0.2)';
+                        feedbackDiv.style.border = '1px solid var(--ui-error)';
+                        feedbackDiv.style.color = 'var(--ui-error)';
+                        feedbackDiv.textContent = `✗ Errado! A resposta correta era: ${data.resposta_correta}`;
+                    }
+                    feedbackDiv.style.display = 'block';
+
+                    // Destacar botões
+                    botoes.forEach(btn => {
+                        const letra = btn.textContent.charAt(0);
+                        if (letra === data.resposta_correta) {
+                            btn.classList.add('correct');
+                        } else if (letra === resposta && !data.acertou) {
+                            btn.classList.add('wrong');
+                        }
+                    });
+
+                    // Mostrar botão próxima/finalizar
+                    if (questaoAtual < quiz.length - 1) {
+                        document.getElementById('btnProxima').style.display = 'block';
+                    } else {
+                        document.getElementById('btnFinalizar').style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                alert('Erro ao verificar resposta!');
+                console.error(error);
+            }
+        }
+
+        function proximaQuestao() {
+            mostrarQuestao(questaoAtual + 1);
+        }
+
+        async function finalizarQuiz() {
+            try {
+                const response = await fetch(`${API_URL}/submeter-quiz`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_id: parseInt(user_id),
+                        respostas: respostas
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    // Salvar resultado no localStorage para a página de resultados
+                    localStorage.setItem('resultado', JSON.stringify(data));
+                    window.location.href = 'result.html';
+                } else {
+                    alert('Erro ao finalizar quiz!');
+                }
+            } catch (error) {
+                alert('Erro ao conectar com o servidor!');
+                console.error(error);
+            }
+        }
+
+        function voltarInicio() {
+            if (confirm('Tem certeza que deseja sair? O progresso será perdido.')) {
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
 
 </body>
 
