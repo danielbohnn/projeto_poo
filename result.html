@@ -14,12 +14,22 @@
         <p style="color: #858585; margin-bottom: 2rem;">Resultados da execução do teste:</p>
 
         <div class="score-circle">
-            <span class="score-number">0</span>
+            <span class="score-number" id="scoreNumber">0</span>
             <span class="score-total">/ 100 pts</span>
         </div>
 
-        <div class="rank-badge">
-            status: "Desenvolvedor Junior/Pleno/Senior"
+        <div class="rank-badge" id="rankBadge">
+            status: "Carregando..."
+        </div>
+
+        <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-input); border-radius: 4px;">
+            <p style="color: var(--text-muted); margin-bottom: 0.5rem;">Acertos</p>
+            <p style="font-size: 1.5rem; color: var(--accent-blue);">
+                <span id="acertos">0</span> / <span id="total">10</span>
+            </p>
+            <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.9rem;">
+                <span id="porcentagem">0</span>% de aproveitamento
+            </p>
         </div>
 
         <div class="btn-group">
@@ -27,6 +37,43 @@
             <a href="index.html" class="btn btn-home" style="text-decoration: none;">Voltar ao /root</a>
         </div>
     </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            const resultadoStr = localStorage.getItem('resultado');
+            
+            if (!resultadoStr) {
+                alert('Nenhum resultado encontrado! Redirecionando...');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const resultado = JSON.parse(resultadoStr);
+            
+            // Atualizar elementos
+            document.getElementById('scoreNumber').textContent = resultado.nota * 10;
+            document.getElementById('acertos').textContent = resultado.acertos;
+            document.getElementById('total').textContent = resultado.total;
+            document.getElementById('porcentagem').textContent = resultado.porcentagem;
+            document.getElementById('rankBadge').textContent = `status: "${resultado.rank}"`;
+
+            // Ajustar cor do círculo baseado na nota
+            const scoreCircle = document.querySelector('.score-circle');
+            if (resultado.porcentagem >= 80) {
+                scoreCircle.style.borderTopColor = 'var(--ui-success)';
+                scoreCircle.style.borderRightColor = 'var(--ui-success)';
+                scoreCircle.style.borderBottomColor = 'var(--ui-success)';
+            } else if (resultado.porcentagem >= 60) {
+                scoreCircle.style.borderTopColor = 'var(--accent-orange)';
+                scoreCircle.style.borderRightColor = 'var(--accent-orange)';
+                scoreCircle.style.borderBottomColor = 'var(--accent-orange)';
+            } else {
+                scoreCircle.style.borderTopColor = 'var(--ui-error)';
+                scoreCircle.style.borderRightColor = 'var(--ui-error)';
+                scoreCircle.style.borderBottomColor = 'var(--ui-error)';
+            }
+        });
+    </script>
 
 </body>
 </html>
