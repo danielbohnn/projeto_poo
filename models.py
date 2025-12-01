@@ -1,17 +1,63 @@
-import sqlite3
-import random
+import sqlite3 # Importa o módulo nativo para interação com banco de dados SQLite
+import random # Importa o módulo para operações aleatórias
+
+# -----------------------------------
+# ANTES DA CLASSE
+# -----------------------------------
+# Nome da classe: DatabaseManager
+#
+# Função da classe
+# -> Para que serve: Gerenciar a conexão com o banco de dados e a estrutura das tabelas.
+# -> Quais objetos são instanciados: Conexões do sqlite3 e cursores.
+# -----------------------------------
 
 class DatabaseManager:
+    # -----------------------------------
+    # ANTES DOS ATRIBUTOS
+    # -----------------------------------
+    # db_path: Caminho do arquivo do banco de dados (string)
+    # -----------------------------------
+
+    # -----------------------------------
+    #             MÉTODO
+    # -----------------------------------
+    # Nome do método: __init__
+    #
+    # Para que serve: Construtor da classe, define o caminho do banco.
+    #
+    # Parâmetros de entrada:
+    # -> db_path: Caminho do arquivo .db (padrão 'quizcode.db')
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def __init__(self, db_path="quizcode.db"):
-        self.db_path = db_path
+        self.db_path = db_path # Atribui o caminho do banco ao atributo da instância
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: conectar
+    #
+    # Para que serve: Estabelecer uma nova conexão com o SQLite.
+    #
+    # Retorno do método:
+    # -> Objeto Connection do sqlite3
+    # -----------------------------------
     def conectar(self):
-        return sqlite3.connect(self.db_path)
+        return sqlite3.connect(self.db_path) # Retorna a conexão ativa com o arquivo do banco
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: criar_tabelas
+    #
+    # Para que serve: Criar as tabelas necessárias (usuarios, questoes, resultados) se não existirem.
+    # -----------------------------------
     def criar_tabelas(self):
-        db = self.conectar()
-        cursor = db.cursor()
+        db = self.conectar() # Abre a conexão com o banco
+        cursor = db.cursor() # Cria um cursor para executar comandos SQL
         
+        # Cria a tabela de usuários se ela não existir
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,6 +66,7 @@ class DatabaseManager:
             )
         """)
         
+        # Cria a tabela de questões se ela não existir
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS questoes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,6 +80,7 @@ class DatabaseManager:
             )
         """)
         
+        # Cria a tabela de resultados com chave estrangeira para usuários
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS resultados (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,23 +91,35 @@ class DatabaseManager:
             )
         """)
         
-        db.commit()
-        db.close()
+        db.commit() # Confirma as alterações no banco de dados
+        db.close() # Fecha a conexão
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: inserir_questoes
+    #
+    # Para que serve: Popular o banco de dados com uma lista inicial de questões, caso esteja vazio.
+    #
+    # Parâmetros de entrada: Nenhum
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def inserir_questoes(self):
-        db = self.conectar()
-        cursor = db.cursor()
+        db = self.conectar() # Abre a conexão com o banco
+        cursor = db.cursor() # Cria o cursor
         
-        cursor.execute("SELECT COUNT(*) FROM questoes")
-        qtd = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM questoes") # Conta quantas questões existem na tabela
+        qtd = cursor.fetchone()[0] # Obtém o número retornado pela consulta
         
-        if qtd > 0:
-            db.close()
-            return
+        if qtd > 0: # Verifica se já existem questões cadastradas
+            db.close() # Fecha a conexão se já houver dados
+            return # Encerra o método para não duplicar dados
         
+        # Lista contendo tuplas com os dados de todas as questões para inserção em massa
         questoes = [
             ("Qual comando imprime algo na tela em Python?", "echo()", "print()", "mostrar()", "display()", "B", "basico"),
-            ("Qual operador cria comentários em Python?", "//", "<!-- -->", "#", "/**/", "C", "basico"),
+            ("Qual operador cria comentários em Python?", "//", "", "#", "/**/", "C", "basico"),
             ("Qual tipo representa números inteiros?", "int", "float", "real", "decimal", "A", "basico"),
             ("Como criar uma variável em Python?", "var x = 10", "x = 10", "int x = 10", "declare x = 10", "B", "basico"),
             ("Qual o resultado de: 10 // 3?", "3.33", "3", "4", "3.0", "B", "basico"),
@@ -160,76 +220,197 @@ class DatabaseManager:
             ("Como implementar iterator protocol?", "Definir __iter__ e __next__", "Usar yield", "Herdar de Iterator", "Usar @iterator", "A", "avancado"),
         ]
         
+        # Query SQL preparada para inserção
         sql = """
             INSERT INTO questoes (pergunta, alternativaA, alternativaB, alternativaC, alternativaD, correta, nivel)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """
         
-        cursor.executemany(sql, questoes)
-        db.commit()
-        db.close()
-        print("✓ 100 questões inseridas com sucesso!")
+        cursor.executemany(sql, questoes) # Executa a inserção em massa usando a lista
+        db.commit() # Confirma as transações
+        db.close() # Fecha a conexão
+        print("✓ 100 questões inseridas com sucesso!") # Imprime mensagem de sucesso
+
+# -----------------------------------
+# ANTES DA CLASSE
+# -----------------------------------
+# Nome da classe: Usuario
+#
+# Função da classe
+# -> Para que serve: Representar e gerenciar as operações relacionadas ao usuário (Login, Cadastro).
+# -> Quais objetos são instanciados: DatabaseManager (injetado), Cursos de banco.
+# -----------------------------------
 
 class Usuario:
+    # -----------------------------------
+    # ANTES DOS ATRIBUTOS
+    # -----------------------------------
+    # db_manager: Instância da classe de gerenciamento de banco
+    # id: Identificador único do usuário
+    # nome: Nome de login do usuário
+    # senha: Senha do usuário
+    # -----------------------------------
+
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: __init__
+    #
+    # Para que serve: Construtor para inicializar o usuário.
+    #
+    # Parâmetros de entrada:
+    # -> db_manager: Objeto de conexão
+    # -> usuario_id: ID opcional
+    # -> nome: Nome opcional
+    # -> senha: Senha opcional
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def __init__(self, db_manager, usuario_id=None, nome=None, senha=None):
-        self.db_manager = db_manager
-        self.id = usuario_id
-        self.nome = nome
-        self.senha = senha
+        self.db_manager = db_manager # Armazena o gerenciador de banco
+        self.id = usuario_id # Define o ID
+        self.nome = nome # Define o nome
+        self.senha = senha # Define a senha
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: cadastrar
+    #
+    # Para que serve: Inserir um novo usuário no banco de dados.
+    #
+    # Parâmetros de entrada:
+    # -> usuario: Nome desejado
+    # -> senha: Senha escolhida
+    #
+    # Retorno do método:
+    # -> True se sucesso, False se usuário já existe
+    # -----------------------------------
     def cadastrar(self, usuario, senha):
-        db = self.db_manager.conectar()
-        cursor = db.cursor()
+        db = self.db_manager.conectar() # Conecta ao banco
+        cursor = db.cursor() # Cria o cursor
         
         try:
-            cursor.execute("INSERT INTO usuarios (usuario, senha) VALUES (?, ?)", (usuario, senha))
-            db.commit()
-            db.close()
-            return True
-        except sqlite3.IntegrityError:
-            db.close()
-            return False
+            cursor.execute("INSERT INTO usuarios (usuario, senha) VALUES (?, ?)", (usuario, senha)) # Tenta inserir novo registro
+            db.commit() # Salva a alteração
+            db.close() # Fecha a conexão
+            return True # Retorna sucesso
+        except sqlite3.IntegrityError: # Captura erro caso usuário já exista (UNIQUE constraint)
+            db.close() # Fecha conexão em caso de erro
+            return False # Retorna falha
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: login
+    #
+    # Para que serve: Verificar credenciais e autenticar usuário.
+    #
+    # Parâmetros de entrada:
+    # -> usuario: Nome de login
+    # -> senha: Senha informada
+    #
+    # Retorno do método:
+    # -> ID do usuário se correto, None se incorreto
+    # -----------------------------------
     def login(self, usuario, senha):
-        db = self.db_manager.conectar()
-        cursor = db.cursor()
+        db = self.db_manager.conectar() # Conecta ao banco
+        cursor = db.cursor() # Cria o cursor
         
-        cursor.execute("SELECT id FROM usuarios WHERE usuario=? AND senha=?", (usuario, senha))
-        resultado = cursor.fetchone()
-        db.close()
+        cursor.execute("SELECT id FROM usuarios WHERE usuario=? AND senha=?", (usuario, senha)) # Busca usuário com a senha correspondente
+        resultado = cursor.fetchone() # Tenta obter o registro
+        db.close() # Fecha a conexão
         
-        if resultado:
-            self.id = resultado[0]
-            self.nome = usuario
-            return self.id
-        return None
+        if resultado: # Se encontrou o usuário
+            self.id = resultado[0] # Atualiza o ID na instância
+            self.nome = usuario # Atualiza o nome na instância
+            return self.id # Retorna o ID
+        return None # Retorna vazio se login falhar
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: buscar_por_id
+    #
+    # Para que serve: Carregar dados do usuário pelo ID.
+    #
+    # Parâmetros de entrada:
+    # -> usuario_id: ID a ser buscado
+    #
+    # Retorno do método:
+    # -> A própria instância (self) atualizada ou None
+    # -----------------------------------
     def buscar_por_id(self, usuario_id):
-        db = self.db_manager.conectar()
-        cursor = db.cursor()
+        db = self.db_manager.conectar() # Conecta ao banco
+        cursor = db.cursor() # Cria o cursor
         
-        cursor.execute("SELECT id, usuario FROM usuarios WHERE id=?", (usuario_id,))
-        resultado = cursor.fetchone()
-        db.close()
+        cursor.execute("SELECT id, usuario FROM usuarios WHERE id=?", (usuario_id,)) # Busca dados pelo ID
+        resultado = cursor.fetchone() # Obtém o registro
+        db.close() # Fecha a conexão
         
-        if resultado:
-            self.id = resultado[0]
-            self.nome = resultado[1]
-            return self
-        return None
+        if resultado: # Se encontrou o ID
+            self.id = resultado[0] # Atualiza o ID
+            self.nome = resultado[1] # Atualiza o nome
+            return self # Retorna o objeto usuário
+        return None # Retorna vazio se não encontrar
+
+# -----------------------------------
+# ANTES DA CLASSE
+# -----------------------------------
+# Nome da classe: Questao
+#
+# Função da classe
+# -> Para que serve: Modelar a estrutura de uma única questão do quiz.
+# -> Quais objetos são instanciados: Nenhum externo, apenas armazena dados.
+# -----------------------------------
 
 class Questao:
+    # -----------------------------------
+    # ANTES DOS ATRIBUTOS
+    # -----------------------------------
+    # id: Identificador da questão
+    # pergunta: Texto do enunciado
+    # alternativaA, B, C, D: Opções de resposta
+    # correta: Letra da resposta certa
+    # nivel: Dificuldade (basico, intermediario, avancado)
+    # -----------------------------------
+
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: __init__
+    #
+    # Para que serve: Inicializar os atributos da questão.
+    #
+    # Parâmetros de entrada:
+    # -> Vários parâmetros correspondentes às colunas do banco (id, pergunta, alternativas, correta, nivel)
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def __init__(self, questao_id=None, pergunta=None, alternativa_a=None, alternativa_b=None, 
                  alternativa_c=None, alternativa_d=None, correta=None, nivel=None):
-        self.id = questao_id
-        self.pergunta = pergunta
-        self.alternativaA = alternativa_a
-        self.alternativaB = alternativa_b
-        self.alternativaC = alternativa_c
-        self.alternativaD = alternativa_d
-        self.correta = correta
-        self.nivel = nivel
+        self.id = questao_id # Define o ID
+        self.pergunta = pergunta # Define a pergunta
+        self.alternativaA = alternativa_a # Define alternativa A
+        self.alternativaB = alternativa_b # Define alternativa B
+        self.alternativaC = alternativa_c # Define alternativa C
+        self.alternativaD = alternativa_d # Define alternativa D
+        self.correta = correta # Define a resposta correta
+        self.nivel = nivel # Define o nível
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: to_dict
+    #
+    # Para que serve: Converter o objeto em um dicionário (útil para APIs/JSON).
+    #
+    # Parâmetros de entrada:
+    # -> incluir_resposta: Booleano para decidir se revela a resposta correta
+    #
+    # Retorno do método:
+    # -> Dicionário com dados da questão
+    # -----------------------------------
     def to_dict(self, incluir_resposta=False):
         questao_dict = {
             'id': self.id,
@@ -239,33 +420,89 @@ class Questao:
             'alternativaC': self.alternativaC,
             'alternativaD': self.alternativaD,
             'nivel': self.nivel
-        }
-        if incluir_resposta:
-            questao_dict['correta'] = self.correta
-        return questao_dict
+        } # Cria o dicionário base
+        if incluir_resposta: # Se solicitado incluir a resposta
+            questao_dict['correta'] = self.correta # Adiciona o campo correta
+        return questao_dict # Retorna o dicionário
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: verificar_resposta
+    #
+    # Para que serve: Checar se a resposta do usuário está certa.
+    #
+    # Parâmetros de entrada:
+    # -> resposta: Letra enviada pelo usuário
+    #
+    # Retorno do método:
+    # -> True se correta, False caso contrário
+    # -----------------------------------
     def verificar_resposta(self, resposta):
-        return resposta.strip().upper() == self.correta
+        return resposta.strip().upper() == self.correta # Compara a entrada formatada com o gabarito
+
+# -----------------------------------
+# ANTES DA CLASSE
+# -----------------------------------
+# Nome da classe: Quiz
+#
+# Função da classe
+# -> Para que serve: Gerenciar uma sessão de jogo, gerando lista de questões e calculando notas.
+# -> Quais objetos são instanciados: DatabaseManager, Lista de objetos Questao.
+# -----------------------------------
 
 class Quiz:
+    # -----------------------------------
+    # ANTES DOS ATRIBUTOS
+    # -----------------------------------
+    # db_manager: Gerenciador de banco de dados
+    # questoes: Lista contendo objetos do tipo Questao
+    # -----------------------------------
+
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: __init__
+    #
+    # Para que serve: Inicializar o gerenciador do Quiz.
+    #
+    # Parâmetros de entrada:
+    # -> db_manager: Objeto de conexão
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def __init__(self, db_manager):
-        self.db_manager = db_manager
-        self.questoes = []
+        self.db_manager = db_manager # Armazena o gerenciador
+        self.questoes = [] # Inicializa lista vazia de questões
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: gerar
+    #
+    # Para que serve: Buscar questões aleatórias no banco e preencher a lista.
+    #
+    # Parâmetros de entrada:
+    # -> nivel: Filtro de dificuldade opcional
+    # -> quantidade: Número de questões (padrão 10)
+    #
+    # Retorno do método:
+    # -> Lista de objetos Questao
+    # -----------------------------------
     def gerar(self, nivel=None, quantidade=10):
-        db = self.db_manager.conectar()
-        cursor = db.cursor()
+        db = self.db_manager.conectar() # Conecta ao banco
+        cursor = db.cursor() # Cria o cursor
         
-        if nivel:
-            cursor.execute("SELECT * FROM questoes WHERE nivel=? ORDER BY RANDOM() LIMIT ?", (nivel, quantidade))
-        else:
-            cursor.execute("SELECT * FROM questoes ORDER BY RANDOM() LIMIT ?", (quantidade,))
+        if nivel: # Se um nível foi especificado
+            cursor.execute("SELECT * FROM questoes WHERE nivel=? ORDER BY RANDOM() LIMIT ?", (nivel, quantidade)) # Busca filtrado por nível aleatoriamente
+        else: # Se nenhum nível especificado
+            cursor.execute("SELECT * FROM questoes ORDER BY RANDOM() LIMIT ?", (quantidade,)) # Busca qualquer questão aleatoriamente
         
-        questoes_db = cursor.fetchall()
-        db.close()
+        questoes_db = cursor.fetchall() # Obtém os resultados
+        db.close() # Fecha a conexão
         
-        self.questoes = []
-        for q in questoes_db:
+        self.questoes = [] # Reseta a lista de questões
+        for q in questoes_db: # Itera sobre os resultados do banco
             questao = Questao(
                 questao_id=q[0],
                 pergunta=q[1],
@@ -275,50 +512,144 @@ class Quiz:
                 alternativa_d=q[5],
                 correta=q[6],
                 nivel=q[7]
-            )
-            self.questoes.append(questao)
+            ) # Instancia um objeto Questao para cada linha
+            self.questoes.append(questao) # Adiciona à lista
         
-        return self.questoes
+        return self.questoes # Retorna a lista preenchida
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: obter_questao_por_id
+    #
+    # Para que serve: Buscar um objeto questão específico na lista atual pelo ID.
+    #
+    # Parâmetros de entrada:
+    # -> questao_id: ID da questão
+    #
+    # Retorno do método:
+    # -> Objeto Questao ou None
+    # -----------------------------------
     def obter_questao_por_id(self, questao_id):
-        for questao in self.questoes:
-            if questao.id == questao_id:
-                return questao
-        return None
+        for questao in self.questoes: # Percorre a lista de questões atuais
+            if questao.id == questao_id: # Compara IDs
+                return questao # Retorna a questão se encontrar
+        return None # Retorna vazio se não achar
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: to_dict_list
+    #
+    # Para que serve: Converter toda a lista de questões para lista de dicionários.
+    #
+    # Parâmetros de entrada:
+    # -> incluir_resposta: Booleano para revelar gabarito
+    #
+    # Retorno do método:
+    # -> Lista de dicionários
+    # -----------------------------------
     def to_dict_list(self, incluir_resposta=False):
-        return [q.to_dict(incluir_resposta) for q in self.questoes]
+        return [q.to_dict(incluir_resposta) for q in self.questoes] # Usa list comprehension para converter cada questão
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: calcular_resultado
+    #
+    # Para que serve: Comparar respostas do usuário com o gabarito.
+    #
+    # Parâmetros de entrada:
+    # -> respostas: Lista de dicionários contendo 'questao_id' e 'resposta'
+    #
+    # Retorno do método:
+    # -> Tupla (numero_acertos, total_questoes)
+    # -----------------------------------
     def calcular_resultado(self, respostas):
-        acertos = 0
-        total = len(self.questoes)
+        acertos = 0 # Inicializa contador de acertos
+        total = len(self.questoes) # Define o total de questões
         
-        for resp in respostas:
-            questao_id = resp.get('questao_id')
-            resposta_usuario = resp.get('resposta', '').strip().upper()
+        for resp in respostas: # Itera sobre as respostas enviadas
+            questao_id = resp.get('questao_id') # Pega o ID da questão
+            resposta_usuario = resp.get('resposta', '').strip().upper() # Pega e formata a resposta do usuário
             
-            questao = self.obter_questao_por_id(questao_id)
-            if questao and questao.verificar_resposta(resposta_usuario):
-                acertos += 1
+            questao = self.obter_questao_por_id(questao_id) # Busca a questão correspondente
+            if questao and questao.verificar_resposta(resposta_usuario): # Se a questão existe e a resposta está certa
+                acertos += 1 # Incrementa acertos
         
-        return acertos, total
+        return acertos, total # Retorna resultado final
+
+# -----------------------------------
+# ANTES DA CLASSE
+# -----------------------------------
+# Nome da classe: Resultado
+#
+# Função da classe
+# -> Para que serve: Persistir pontuações e gerar estatísticas do usuário.
+# -> Quais objetos são instanciados: DatabaseManager.
+# -----------------------------------
 
 class Resultado:
+    # -----------------------------------
+    # ANTES DOS ATRIBUTOS
+    # -----------------------------------
+    # db_manager: Gerenciador de banco de dados
+    # -----------------------------------
+
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: __init__
+    #
+    # Para que serve: Inicializar a classe de resultados.
+    #
+    # Parâmetros de entrada:
+    # -> db_manager: Objeto de conexão
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def __init__(self, db_manager):
-        self.db_manager = db_manager
+        self.db_manager = db_manager # Armazena o gerenciador
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: salvar
+    #
+    # Para que serve: Gravar a nota de um usuário no histórico.
+    #
+    # Parâmetros de entrada:
+    # -> usuario_id: ID do usuário
+    # -> nota: Pontuação obtida
+    #
+    # Retorno do método: Nenhum
+    # -----------------------------------
     def salvar(self, usuario_id, nota):
-        db = self.db_manager.conectar()
-        cursor = db.cursor()
+        db = self.db_manager.conectar() # Conecta ao banco
+        cursor = db.cursor() # Cria o cursor
         
-        cursor.execute("INSERT INTO resultados (usuario_id, nota) VALUES (?, ?)", (usuario_id, nota))
-        db.commit()
-        db.close()
+        cursor.execute("INSERT INTO resultados (usuario_id, nota) VALUES (?, ?)", (usuario_id, nota)) # Insere o registro de resultado
+        db.commit() # Salva a transação
+        db.close() # Fecha a conexão
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: obter_estatisticas
+    #
+    # Para que serve: Calcular métricas (média, melhor/pior nota) de um usuário.
+    #
+    # Parâmetros de entrada:
+    # -> usuario_id: ID do usuário
+    #
+    # Retorno do método:
+    # -> Dicionário com estatísticas calculadas
+    # -----------------------------------
     def obter_estatisticas(self, usuario_id):
-        db = self.db_manager.conectar()
-        cursor = db.cursor()
+        db = self.db_manager.conectar() # Conecta ao banco
+        cursor = db.cursor() # Cria o cursor
         
+        # Query SQL com funções de agregação para calcular estatísticas
         cursor.execute("""
             SELECT 
                 COUNT(*) as total_testes,
@@ -329,29 +660,41 @@ class Resultado:
             WHERE usuario_id=?
         """, (usuario_id,))
         
-        resultado = cursor.fetchone()
-        db.close()
+        resultado = cursor.fetchone() # Obtém os dados agregados
+        db.close() # Fecha a conexão
         
-        if not resultado or resultado[0] == 0:
+        if not resultado or resultado[0] == 0: # Se não houver resultados
             return {
                 'total_testes': 0,
                 'media': 0,
                 'melhor_nota': 0,
                 'pior_nota': 0
-            }
+            } # Retorna estrutura zerada
         
         return {
-            'total_testes': resultado[0],
-            'media': round(resultado[1] or 0, 1),
-            'melhor_nota': resultado[2] or 0,
-            'pior_nota': resultado[3] or 0
-        }
+            'total_testes': resultado[0], # Total de testes
+            'media': round(resultado[1] or 0, 1), # Média arredondada
+            'melhor_nota': resultado[2] or 0, # Melhor pontuação
+            'pior_nota': resultado[3] or 0 # Pior pontuação
+        } # Retorna dicionário preenchido
     
+    # -----------------------------------
+    #            MÉTODO
+    # -----------------------------------
+    # Nome do método: calcular_rank
+    #
+    # Para que serve: Determinar o título do usuário baseado na porcentagem de acertos.
+    #
+    # Parâmetros de entrada:
+    # -> porcentagem: Valor numérico de 0 a 100
+    #
+    # Retorno do método:
+    # -> String com o nome do rank (Junior, Pleno, Senior)
+    # -----------------------------------
     def calcular_rank(self, porcentagem):
-        if porcentagem >= 80:
-            return "Desenvolvedor Senior"
-        elif porcentagem >= 60:
-            return "Desenvolvedor Pleno"
-        else:
-            return "Desenvolvedor Junior"
-
+        if porcentagem >= 80: # Se acerto for maior ou igual a 80%
+            return "Desenvolvedor Senior" # Retorna rank Senior
+        elif porcentagem >= 60: # Se entre 60% e 79%
+            return "Desenvolvedor Pleno" # Retorna rank Pleno
+        else: # Se abaixo de 60%
+            return "Desenvolvedor Junior" # Retorna rank Junior
